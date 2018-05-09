@@ -110,7 +110,7 @@ def imageMatch(img1,img2):
             good.append(m)
             val.append(m.distance/n.distance)
     points=getMasSlaCoords(kp1,kp2,good,val)
-    # drawMatches(img1,kp1,img2,kp2,good)
+    drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
     return points
 def chunks(raster1,raster2,bands):
     columns=raster2.RasterXSize
@@ -145,12 +145,12 @@ def chunks(raster1,raster2,bands):
 
                 img1=band1.ReadAsArray(img1col-int(raster1Cols/2.0),img1row-int(raster1Rows/2.0),raster1Cols,raster1Rows)
                 img1,img2=converto8bit(img1,img2)
-                # if i==j:                                #--------------------------------for testing else remove if clause and run in main thread
-                matchPoints=imageMatch(img1,img2)
-                print matchPoints
+                if i==j:                                #--------------------------------for testing else remove if clause and run in main thread
+                    matchPoints=imageMatch(img1,img2)
+                    print matchPoints
 def main():
 
-    raster1 = gdal.Open('C:\\Users\\Bharath\\Documents\\TDP\\Images\\sentinel2set1.img')
+    raster1 = gdal.Open('C:\\Users\\Bharath\\Documents\\TDP\\Images\\sentinel2set1.tif')
     raster2 = gdal.Open('C:\\Users\\Bharath\\Documents\\TDP\\Images\\l4set1.img')
     bands=[2]
     chunks(raster1,raster2,bands)
