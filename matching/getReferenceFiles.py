@@ -55,7 +55,7 @@ def main():
                     featureGeom=eachFeature.GetGeometryRef()
                     if featureGeom.Intersects(eachGeom[0]):
                         intersectionGeom=featureGeom.Intersection(eachGeom[0])
-                        if intersectionGeom.GetArea()/eachGeom[0].GetArea()<0.25:                       #-----------------removed for small clip intersections
+                        if intersectionGeom.GetArea()/eachGeom[0].GetArea()<0.15:                       #-----------------removed for small clip intersections
                             continue
                         eachGeom[0]=eachGeom[0].Difference(intersectionGeom)
                         eachGeom.append(eachFeature.GetField('fileName'))
