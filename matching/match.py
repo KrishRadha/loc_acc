@@ -117,12 +117,12 @@ def imageMatch(img1,img2):
         good=[]
         # ratio test as per Lowe's paper
         for i,(m,n) in enumerate(matches):
-            if m.distance < 0.3*n.distance:
+            if m.distance < 0.65*n.distance:
                 matchesMask[i]=[1,0]
                 good.append(m)
                 val.append(m.distance/n.distance)
         points=getMasSlaCoords(kp1,kp2,good,val)
-        # drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
+        drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
         return points,1
     else:
         return [],0
@@ -167,7 +167,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                     q=rows-j*int(floor(float(rows)/parts))
                     q2=rows-j*int(floor(float(rows)/parts))
                     q1=refrows-j*int(floor(float(refrows)/parts))
-                if (True):
+                if (i%2==0 and j%2==0):
                     print 'processing part',i,j,parts
                     scaleDiff=[array2Gt[1]/array1Gt[1],array2Gt[5]/array1Gt[5]]
                     img2=band2.ReadAsArray(array2Bounds[0]+i*int(floor(float(columns)/parts)),array2Bounds[1]+j*int(floor(float(rows)/parts)),p2,q2)
@@ -214,7 +214,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
 
 def main():
     dir = os.sys.argv[1]
-    bands = [2]
+    bands = [3]
     paramFiles=getReferenceFiles.filesinsidefolder(dir,['.json'])
     points=[]
     for eachFile in paramFiles:
