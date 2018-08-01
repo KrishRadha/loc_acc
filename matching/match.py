@@ -222,7 +222,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                         # cv2.imshow('Matched Features',img1)
                         # cv2.waitKey(0)
                         # cv2.destroyWindow('Matched Features')
-                        matchPoints,logPoints=imageMatchORB(img1,img2)
+                        matchPoints,logPoints=imageMatchORB(img1,img2)###########################################change this function to use orb or sift
                         if logPoints==0:
                             print 'Error in descriptor calculation in',i,j,'part'
                         if len(matchPoints)>0:
@@ -254,9 +254,9 @@ def main():
         with open(eachFile) as paramFile:
             files=json.load(paramFile)
         for i in range(0,len(files.keys())):
-            if os.path.exists(files.keys()[i][:-4]+'orb.csv'):
-                os.remove(files.keys()[i][:-4]+'orb.csv')
-            with open(files.keys()[i][:-4]+'orb.csv','a+') as pointsFile:
+            if os.path.exists(files.keys()[i][:-4]+'orb.csv'):###############################remove orb if sift is used and change in line no 225 too
+                os.remove(files.keys()[i][:-4]+'orb.csv')###############################remove orb if sift is used and change in line no 225 too
+            with open(files.keys()[i][:-4]+'orb.csv','a+') as pointsFile:###############################remove orb if sift is used and change in line no 225 too
                 for eachRefFile in files[files.keys()[i]]:
                     raster1=gdal.Open(eachRefFile)
                     raster2=gdal.Open(files.keys()[i])
