@@ -122,7 +122,39 @@ def imageMatch(img1,img2):
                 good.append(m)
                 val.append(m.distance/n.distance)
         points=getMasSlaCoords(kp1,kp2,good,val)
-        drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
+        # drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
+        return points,1
+    else:
+        return [],0
+def imageMatchORB(img1,img2):
+    orb = cv2.ORB()
+    kp1 = orb.detect(img1,None)
+    kp2 = orb.detect(img2,None)
+    kp1, des1 = orb.compute(img1, kp1)
+    kp2, des2 = orb.compute(img2, kp2)
+
+    # find the keypoints and descriptors with SIFT
+    # kp1, des1 = sift.detectAndCompute(img1,None)
+    # kp2, des2 = sift.detectAndCompute(img2,None)
+    if (des1 is not None and  des2 is not None):
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+
+        matches = bf.match(des1,des2)
+        # Need to draw only good matches, so create a mask
+        # matchesMask = [[0,0] for i in xrange(len(matches))]
+        good=[]
+        val=[]
+        # good = sorted(matches, key = lambda x:x.distance)
+        # good=good[:int(len(good)/2)]
+        # val=[0*x for x in range(0,len(good))]
+        # ratio test as per Lowe's paper
+        for eachMatch in matches:
+            print eachMatch.distance
+            if eachMatch.distance < 0.99999:
+                good.append(eachMatch)
+                val.append(eachMatch.distance)
+        points=getMasSlaCoords(kp1,kp2,good,val)
+        # drawMatches(img1,kp1,img2,kp2,good)                 #-------------------------------enable to show images
         return points,1
     else:
         return [],0
@@ -167,7 +199,8 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                     q=rows-j*int(floor(float(rows)/parts))
                     q2=rows-j*int(floor(float(rows)/parts))
                     q1=refrows-j*int(floor(float(refrows)/parts))
-                if (i%2==0 and j%2==0):
+                # if (i%2==0 and j%2==0):
+                if i==j:
                     print 'processing part',i,j,parts
                     scaleDiff=[array2Gt[1]/array1Gt[1],array2Gt[5]/array1Gt[5]]
                     img2=band2.ReadAsArray(array2Bounds[0]+i*int(floor(float(columns)/parts)),array2Bounds[1]+j*int(floor(float(rows)/parts)),p2,q2)
@@ -189,7 +222,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                         # cv2.imshow('Matched Features',img1)
                         # cv2.waitKey(0)
                         # cv2.destroyWindow('Matched Features')
-                        matchPoints,logPoints=imageMatch(img1,img2)
+                        matchPoints,logPoints=imageMatchORB(img1,img2)
                         if logPoints==0:
                             print 'Error in descriptor calculation in',i,j,'part'
                         if len(matchPoints)>0:
@@ -218,19 +251,22 @@ def main():
     paramFiles=getReferenceFiles.filesinsidefolder(dir,['.json'])
     points=[]
     for eachFile in paramFiles:
-        if os.path.exists(eachFile[:-5]+'.csv'):
-            os.remove(eachFile[:-5]+'.csv')
-        with open(eachFile[:-5]+'.csv','a+') as pointsFile:
-            with open(eachFile) as paramFile:
-                files=json.load(paramFile)
-            for eachRefFile in files[files.keys()[0]]:
-                raster1=gdal.Open(eachRefFile)
-                raster2=gdal.Open(files.keys()[0])
-                points=processPair(raster1,raster2,bands)
-                if len(points)>0:
-                    for eachPoint in points:
-                        pointsFile.write("{},{},{},{}\n".format(eachPoint[0],eachPoint[1],eachPoint[2],eachPoint[3]))
-                # pointsFile.write(points)
+        with open(eachFile) as paramFile:
+            files=json.load(paramFile)
+        for i in range(0,len(files.keys())):
+            if os.path.exists(files.keys()[i][:-4]+'orb.csv'):
+                os.remove(files.keys()[i][:-4]+'orb.csv')
+            with open(files.keys()[i][:-4]+'orb.csv','a+') as pointsFile:
+                for eachRefFile in files[files.keys()[i]]:
+                    raster1=gdal.Open(eachRefFile)
+                    raster2=gdal.Open(files.keys()[i])
+                    points=processPair(raster1,raster2,bands)
+                    print files.keys()[i], 'is processed with', eachRefFile, 'with', len(points), 'points'
+                    # print points[0]
+                    if len(points)>0:
+                        for eachPoint in points:
+                            pointsFile.write("{},{},{},{}\n".format(eachPoint[0],eachPoint[1],eachPoint[2],eachPoint[3]))
+                        # pointsFile.write(points)
 
 if __name__=="__main__":
     main()
