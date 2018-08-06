@@ -5,6 +5,8 @@ from osgeo import gdal,ogr
 from math import ceil,floor
 import getReferenceFiles
 import json
+
+
 def drawMatches(img1, kp1, img2, kp2, matches):
     # Create a new output image that concatenates the two images together
     # (a.k.a) a montage
@@ -98,7 +100,7 @@ def converto8bit(img1,img2):
         return 0
     return img1,img2
 def imageMatch(img1,img2):
-    sift = cv2.SIFT()
+    sift = cv2.xfeatures2d.SIFT_create()
 
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(img1,None)
@@ -112,7 +114,7 @@ def imageMatch(img1,img2):
 
         matches = flann.knnMatch(des1,des2,k=2)
         # Need to draw only good matches, so create a mask
-        matchesMask = [[0,0] for i in xrange(len(matches))]
+        matchesMask = [[0,0] for i in range(0,len(matches))]
         val=[]
         good=[]
         # ratio test as per Lowe's paper
@@ -149,7 +151,7 @@ def imageMatchORB(img1,img2):
         # val=[0*x for x in range(0,len(good))]
         # ratio test as per Lowe's paper
         for eachMatch in matches:
-            print eachMatch.distance
+            print (eachMatch.distance)
             if eachMatch.distance < 0.99999:
                 good.append(eachMatch)
                 val.append(eachMatch.distance)
@@ -167,7 +169,7 @@ def processPair(raster1,raster2,bands):
     array2Bounds=(int(ceil((intersectionBounds[0]-raster2Bounds[0])/raster2Gt[1])),int(ceil((intersectionBounds[1]-raster2Bounds[1])/raster2Gt[5])),int(floor((intersectionBounds[2]-raster2Bounds[0])/raster2Gt[1])),int(floor((intersectionBounds[3]-raster2Bounds[1])/raster2Gt[5])))
     array1Gt=(raster1Gt[0]+raster1Gt[1]*array1Bounds[0],raster1Gt[1],raster1Gt[2],raster1Gt[3]+raster1Gt[5]*array1Bounds[1],raster1Gt[4],raster1Gt[5])
     array2Gt=(raster2Gt[0]+raster2Gt[1]*array2Bounds[0],raster2Gt[1],raster2Gt[2],raster2Gt[3]+raster2Gt[5]*array2Bounds[1],raster2Gt[4],raster2Gt[5])
-    print array1Gt,array2Gt
+    print (array1Gt,array2Gt)
     points=chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands)
     return points
 def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
@@ -181,7 +183,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
         band2=raster2.GetRasterBand(b)
         approxPixels=512     #------------------------------------approximate block size/ no of pixels in each block
         parts=max(rows,columns)/approxPixels
-        for i in range(0,parts):
+        for i in range(0,int(parts)):
             if i<parts-1:
                 p=int(floor(float(columns)/parts))
                 p2=int(floor(float(columns)/parts))
@@ -190,7 +192,7 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                 p=columns-i*int(floor(float(columns)/parts))
                 p2=columns-i*int(floor(float(columns)/parts))
                 p1=refcolumns-i*int(floor(float(refcolumns)/parts))
-            for j in range(0,parts):
+            for j in range(0,int(parts)):
                 if j<parts-1:
                     q=int(floor(float(rows)/parts))
                     q2=int(floor(float(rows)/parts))
@@ -199,9 +201,9 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                     q=rows-j*int(floor(float(rows)/parts))
                     q2=rows-j*int(floor(float(rows)/parts))
                     q1=refrows-j*int(floor(float(refrows)/parts))
-                # if (i%2==0 and j%2==0):
-                if i==j:
-                    print 'processing part',i,j,parts
+                if (i%2==0 and j%2==0):
+                #if i==j:
+                    print ('processing part',i,j,parts)
                     scaleDiff=[array2Gt[1]/array1Gt[1],array2Gt[5]/array1Gt[5]]
                     img2=band2.ReadAsArray(array2Bounds[0]+i*int(floor(float(columns)/parts)),array2Bounds[1]+j*int(floor(float(rows)/parts)),p2,q2)
                     img1=band1.ReadAsArray(array1Bounds[0]+i*int(floor(float(refcolumns)/parts)),array1Bounds[1]+j*int(floor(float(refrows)/parts)),p1,q1)
@@ -222,9 +224,9 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
                         # cv2.imshow('Matched Features',img1)
                         # cv2.waitKey(0)
                         # cv2.destroyWindow('Matched Features')
-                        matchPoints,logPoints=imageMatchORB(img1,img2)###########################################change this function to use orb or sift
+                        matchPoints,logPoints=imageMatch(img1,img2)###########################################change this function to use orb or sift
                         if logPoints==0:
-                            print 'Error in descriptor calculation in',i,j,'part'
+                            print ('Error in descriptor calculation in',i,j,'part')
                         if len(matchPoints)>0:
                             for eachMatchPoint in matchPoints:
                                 lon2=array2Gt[0]+(float(i*int(floor(float(columns)/parts)))+eachMatchPoint[0][2])*array2Gt[1]
@@ -247,21 +249,21 @@ def chunks(raster1,raster2,array1Gt,array2Gt,array1Bounds,array2Bounds,bands):
 
 def main():
     dir = os.sys.argv[1]
-    bands = [3]
+    bands = [1]
     paramFiles=getReferenceFiles.filesinsidefolder(dir,['.json'])
     points=[]
     for eachFile in paramFiles:
         with open(eachFile) as paramFile:
             files=json.load(paramFile)
         for i in range(0,len(files.keys())):
-            if os.path.exists(files.keys()[i][:-4]+'orb.csv'):###############################remove orb if sift is used and change in line no 225 too
-                os.remove(files.keys()[i][:-4]+'orb.csv')###############################remove orb if sift is used and change in line no 225 too
-            with open(files.keys()[i][:-4]+'orb.csv','a+') as pointsFile:###############################remove orb if sift is used and change in line no 225 too
-                for eachRefFile in files[files.keys()[i]]:
+            if os.path.exists(list(files.keys())[i][:-4]+'.csv'):###############################remove orb if sift is used and change in line no 225 too
+                os.remove(list(files.keys())[i][:-4]+'.csv')###############################remove orb if sift is used and change in line no 225 too
+            with open(list(files.keys())[i][:-4]+'.csv','w+') as pointsFile:###############################remove orb if sift is used and change in line no 225 too
+                for eachRefFile in files[list(files.keys())[i]]:
                     raster1=gdal.Open(eachRefFile)
-                    raster2=gdal.Open(files.keys()[i])
+                    raster2=gdal.Open(list(files.keys())[i])
                     points=processPair(raster1,raster2,bands)
-                    print files.keys()[i], 'is processed with', eachRefFile, 'with', len(points), 'points'
+                    print (list(files.keys())[i], 'is processed with', eachRefFile, 'with', len(points), 'points')
                     # print points[0]
                     if len(points)>0:
                         for eachPoint in points:
